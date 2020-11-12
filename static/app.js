@@ -8,6 +8,7 @@ const count = document.getElementById('count');
 const chatScroll = document.getElementById('chat-scroll');
 const chatContent = document.getElementById('chat-content');
 const chatInput = document.getElementById('chat-input');
+const playbackBtn = document.getElementById('playbackBtn');
 let connected = false;
 let room;
 let chat;
@@ -15,9 +16,11 @@ let conv;
 let screenTrack;
 
 function addLocalVideo() {
+    console.log('adding local video');
     Twilio.Video.createLocalVideoTrack().then(track => {
         let video = document.getElementById('local').firstChild;
         let trackElement = track.attach();
+        trackElement.mute = true;
         trackElement.addEventListener('click', () => { zoomTrack(trackElement); });
         video.appendChild(trackElement);
     });
@@ -52,17 +55,24 @@ function connectButtonHandler(event) {
     }
 };
 
-function connect(username) {
+async function connect(username) {
     let promise = new Promise((resolve, reject) => {
         // get a token from the back end
         let data;
         fetch('/login', {
             method: 'POST',
             body: JSON.stringify({'username': username})
-        }).then(res => res.json()).then(_data => {
+        }).then(res => res.json()).then(async _data => {
             // join video call
             data = _data;
-            return Twilio.Video.connect(data.token);
+            const media = await navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+                .then(function(mediaStream) {
+                    window.mediaStream = mediaStream;
+                    return mediaStream.getTracks()
+                });
+            return Twilio.Video.connect(data.token, {
+                tracks: media
+            });
         }).then(_room => {
             room = _room;
             room.participants.forEach(participantConnected);
@@ -151,7 +161,7 @@ function disconnect() {
     updateParticipantCount();
 };
 
-function shareScreenHandler() {
+function shareScreenHandler(event) {
     event.preventDefault();
     if (!screenTrack) {
         navigator.mediaDevices.getDisplayMedia().then(stream => {
@@ -234,7 +244,7 @@ function addMessageToChat(user, message) {
     chatScroll.scrollTop = chatScroll.scrollHeight;
 }
 
-function toggleChatHandler() {
+function toggleChatHandler(event) {
     event.preventDefault();
     if (root.classList.contains('withChat')) {
         root.classList.remove('withChat');
@@ -252,8 +262,12 @@ function onChatInputKey(ev) {
     }
 };
 
-addLocalVideo();
-button.addEventListener('click', connectButtonHandler);
-shareScreen.addEventListener('click', shareScreenHandler);
-toggleChat.addEventListener('click', toggleChatHandler);
-chatInput.addEventListener('keyup', onChatInputKey);
+if (Twilio.Video.isSupported) {
+    addLocalVideo();
+    button.addEventListener('click', connectButtonHandler);
+    shareScreen.addEventListener('click', shareScreenHandler);
+    toggleChat.addEventListener('click', toggleChatHandler);
+    chatInput.addEventListener('keyup', onChatInputKey);
+} else {
+    alert('Browser Not Supported');
+}

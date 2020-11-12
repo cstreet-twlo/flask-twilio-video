@@ -12,6 +12,6 @@ python-dotenv==0.12.0
 pytz==2019.3
 requests==2.23.0
 six==1.14.0
-twilio==6.38.1
+twilio==6.47.0
 urllib3==1.25.8
 Werkzeug==1.0.1

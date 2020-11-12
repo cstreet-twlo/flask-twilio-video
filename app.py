@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from flask import Flask, render_template, request, abort
 from twilio.jwt.access_token import AccessToken
 from twilio.jwt.access_token.grants import VideoGrant, IpMessagingGrant
+from twilio.jwt.access_token.grants import AccessTokenGrant
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioException, TwilioRestException
 
